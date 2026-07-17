@@ -1,0 +1,31 @@
+flowchart TD
+    Start([Trigger: Admin klik Generate Rules<br>atau Cronjob Bulanan])
+
+    Start --> SetParams[Set parameter:<br>min_support, min_confidence,<br>min_transactions]
+    SetParams --> Truncate[Truncate apriori_rules table]
+
+    Truncate --> FetchData[Fetch data transaksi:<br>order_items dari orders completed]
+    FetchData --> DataOK{"Data cukup?<br>&gt;= min_transactions"}
+
+    DataOK -->|Tidak| Fallback["Cold-start fallback<br>Best Seller / Admin Picks"]
+    DataOK -->|Ya| BuildMatrix["Bangun transaction matrix:<br>user_id / session_id to products"]
+
+    BuildMatrix --> RunApriori["AprioriService::mine()"]
+    RunApriori --> PyScript["shell_exec: python mine.py"]
+    PyScript --> PyOutput["Python output: JSON rules<br>support, confidence, lift"]
+
+    PyOutput --> ParseJSON[Parse JSON rules]
+    ParseJSON --> FilterLift{"Filter: Lift &gt; 1?"}
+    FilterLift -->|Tidak| SkipRule[Skip rule]
+    FilterLift -->|Ya| InsertDB[Insert ke apriori_rules:<br>antecedent, consequent,<br>support, confidence, lift]
+
+    InsertDB --> MoreRules{Ada rules lain?}
+    MoreRules -->|Ya| FilterLift
+    MoreRules -->|Tidak| Done
+
+    SkipRule --> MoreRules
+    Fallback --> Done
+
+    Done --> Notify([Redirect ke Apriori<br>refresh halaman])
+
+

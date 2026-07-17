@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP ZAP Context — AlbaSambosa V1
+  Used for baseline security scan of the customer-facing web app.
+
+  Usage:
+    docker run --network host -v $(pwd)/docs/testing/security:/zap/wrk \
+      ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+      -t http://localhost:8000 \
+      -c /zap/wrk/zap-context.context \
+      -r /zap/wrk/zap-report.html
+
+  Focus areas (per PRD U-33):
+    - SQL Injection (all form inputs, query params)
+    - XSS / Reflected XSS (all rendered fields)
+    - CSRF (all POST/PUT/DELETE forms)
+
+  Admin panel (/admin/*) excluded — Filament has built-in CSRF and
+  is only accessible to authenticated admin users.
+-->
+<Configuration>
+  <context name="albasambosa-v1">
+    <type>1</type>
+    <strategy>DEFAULT</strategy>
+
+    <!-- Target scope: customer-facing web app only -->
+    <include>http://localhost:8000</include>
+    <include>http://localhost:8000/*</include>
+
+    <!-- Exclude admin (Filament — separate auth, built-in CSRF) -->
+    <exclude>http://localhost:8000/admin</exclude>
+    <exclude>http://localhost:8000/admin/*</exclude>
+
+    <!-- Exclude static assets -->
+    <exclude>http://localhost:8000/build/*</exclude>
+    <exclude>http://localhost:8000/vendor/*</exclude>
+    <exclude>http://localhost:8000/livewire/*</exclude>
+    <exclude>http://localhost:8000/favicon.ico</exclude>
+
+    <!-- Technology detection -->
+    <tech>PHP</tech>
+    <tech>MySQL</tech>
+    <tech>JavaScript</tech>
+
+    <!-- Authentication: not configured for baseline scan.
+         Testing unauthenticated attack surface is sufficient for V1.
+         Admin panel is excluded above. -->
+    <authentication type="manual" />
+  </context>
+</Configuration>

@@ -1,0 +1,41 @@
+flowchart TD
+    Start([Webhook Diterima POST /api/webhook/biteship])
+    Start --> SigCheck{Verifikasi Signature Header?}
+    SigCheck -->|Invalid / Missing| Reject403([HTTP 401/403])
+    SigCheck -->|Valid| IpCheck{IP Whitelist?}
+    IpCheck -->|Not Whitelisted| Reject403
+    IpCheck -->|Whitelisted| Parse[Parse Payload: waybill_id, status, courier]
+
+    Parse --> Return200([HTTP 200 OK - Segera])
+    Return200 --> Dispatch[Dispatch Job ke Queue]
+
+    Dispatch --> Job[Job: ProcessBiteshipWebhook]
+    Job --> FindShipment[Find shipment by waybill_id atau biteship_order_id]
+
+    FindShipment --> Found{Shipment ditemukan?}
+    Found -->|Tidak| LogError[Log Error - Shipment Not Found]
+    Found -->|Ya| UpdateTracking[Update shipment.tracking_status]
+
+    UpdateTracking --> StatusType{Status Biteship?}
+
+    StatusType -->|confirmed| OnlyTracking[Update tracking_status saja]
+    StatusType -->|in_transit| OnlyTracking
+    StatusType -->|failed| LogFailed[NotificationLog: failed delivery]
+    StatusType -->|picked_up| PickedUp[TransitionOrderStatus → Shipping]
+    StatusType -->|delivered| Delivered[TransitionOrderStatus → Delivered]
+
+    OnlyTracking --> TerminalGuard
+    LogFailed --> TerminalGuard
+    PickedUp --> NotifyPickup["Kirim WhatsApp: Siap Diambil"]
+    Delivered --> NotifyDeliver["Kirim WhatsApp: Pesanan Sampai"]
+
+    TerminalGuard{Order status terminal?}
+    TerminalGuard -->|Cancel/Completed/RefundDone/Expire| SkipOrder[Skip order transition]
+    TerminalGuard -->|Aktif| ProcessTransition[Proses order transition + notification_logs]
+
+    NotifyPickup --> Done([Selesai])
+    NotifyDeliver --> Done
+    SkipOrder --> Done
+    ProcessTransition --> Done
+
+

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kategori — Admin AlbaSambosa</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400;500;600;700&family=Playfair+Display+SC:wght@400;700&display=swap');
+  h1,h2,h3{font-family:'Playfair Display SC',serif;font-weight:700;}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Karla, system-ui, -apple-system, sans-serif;
+    background: #FEF2F2; color: #450A0A; line-height: 1.5;
+    display: flex; min-height: 100vh;
+  }
+  .sidebar {
+    width: 240px; background: #fff; border-right: 1px solid #FECACA;
+    padding: 20px 0; flex-shrink: 0;
+  }
+  .sidebar-logo { padding: 0 20px 24px; font-size: 18px; font-weight: 700; color: #DC2626; }
+  .sidebar-nav { display: flex; flex-direction: column; }
+  .sidebar-nav a {
+    padding: 10px 20px; text-decoration: none; color: #450A0A; font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px; transition: background 0.1s;
+  }
+  .sidebar-nav a:hover, .sidebar-nav a.active { background: #FEF2F2; color: #DC2626; }
+  .sidebar-nav a.active { font-weight: 600; border-right: 3px solid #DC2626; }
+
+  .main { flex: 1; padding: 24px 32px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .page-header h1 { font-size: 24px; font-weight: 700; }
+  .btn-primary {
+    padding: 10px 20px; background: #DC2626; color: #fff; border: none; border-radius: 8px;
+    font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #991B1B; }
+
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); overflow: hidden; }
+
+  .category-list { list-style: none; }
+  .category-item {
+    display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #FEF2F2;
+    transition: background 0.1s;
+  }
+  .category-item:last-child { border-bottom: none; }
+  .category-item:hover { background: #FEF2F2; }
+  .category-item.dragging { opacity: 0.5; background: #FEF2F2; }
+
+  .drag-handle {
+    cursor: grab; color: #FECACA; font-size: 18px; padding: 4px 12px 4px 0;
+    user-select: none;
+  }
+  .drag-handle:active { cursor: grabbing; }
+
+  .category-name {
+    flex: 1; font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 10px;
+  }
+  .category-name .count { font-size: 12px; color: #7F1D1D; font-weight: 400; }
+
+  .category-actions { display: flex; gap: 4px; }
+  .btn-icon {
+    padding: 6px 12px; border: 1px solid #FECACA; background: #fff; border-radius: 6px;
+    font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 13px; cursor: pointer; color: #450A0A;
+    transition: all 0.1s;
+  }
+  .btn-icon:hover { background: #FEF2F2; border-color: #DC2626; color: #DC2626; }
+  .btn-icon.danger:hover { background: #ffdad6; border-color: #DC2626; color: #DC2626; }
+
+  .hint { font-size: 13px; color: #7F1D1D; padding: 12px 16px; text-align: center; border-top: 1px solid #FEF2F2; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #fff; border-radius: 12px; padding: 24px; width: 400px; max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal .field { margin-bottom: 16px; }
+  .modal .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #450A0A; }
+  .modal .field input {
+    width: 100%; padding: 10px 14px; border: 1px solid #FECACA; border-radius: 8px;
+    font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 14px;
+  }
+  .modal .field input:focus { outline: none; border-color: #DC2626; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-cancel {
+    padding: 8px 16px; border: 1px solid #FECACA; background: #fff; border-radius: 8px;
+    font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 14px; cursor: pointer;
+  }
+  .btn-save {
+    padding: 8px 20px; background: #DC2626; color: #fff; border: none; border-radius: 8px;
+    font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">AlbaSambosa</div>
+  <div class="sidebar-nav">
+    <a href="#">Dashboard</a>
+    <a href="#">Produk</a>
+    <a href="#" class="active">Kategori</a>
+    <a href="#">Pesanan</a>
+    <a href="#">Pengiriman</a>
+    <a href="#">Apriori</a>
+    <a href="#">Notifikasi</a>
+    <a href="#">Konfigurasi</a>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>Kategori</h1>
+    <button class="btn-primary" onclick="openModal()">+ Tambah Kategori</button>
+  </div>
+
+  <div class="card">
+    <ul class="category-list" id="categoryList">
+      <li class="category-item" draggable="true">
+        <span class="drag-handle">&#9776;</span>
+        <span class="category-name">&#10003; Frozen Food <span class="count">(24 produk)</span></span>
+        <div class="category-actions">
+          <button class="btn-icon">&#9998; Edit</button>
+          <button class="btn-icon danger">&#128465; Hapus</button>
+        </div>
+      </li>
+      <li class="category-item" draggable="true">
+        <span class="drag-handle">&#9776;</span>
+        <span class="category-name">&#10003; Sambal <span class="count">(18 produk)</span></span>
+        <div class="category-actions">
+          <button class="btn-icon">&#9998; Edit</button>
+          <button class="btn-icon danger">&#128465; Hapus</button>
+        </div>
+      </li>
+      <li class="category-item" draggable="true">
+        <span class="drag-handle">&#9776;</span>
+        <span class="category-name">&#10003; Catering <span class="count">(9 produk)</span></span>
+        <div class="category-actions">
+          <button class="btn-icon">&#9998; Edit</button>
+          <button class="btn-icon danger">&#128465; Hapus</button>
+        </div>
+      </li>
+    </ul>
+    <div class="hint">&#8597; Drag &amp; drop untuk mengubah urutan kategori</div>
+  </div>
+</main>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle">Tambah Kategori</h2>
+    <div class="field">
+      <label>Nama Kategori</label>
+      <input type="text" id="categoryName" placeholder="Masukkan nama kategori">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-save" onclick="closeModal()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal() { document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// Drag and drop
+const list = document.getElementById('categoryList');
+list.addEventListener('dragstart', e => { if (e.target.matches('li')) e.target.classList.add('dragging'); });
+list.addEventListener('dragend', e => { if (e.target.matches('li')) e.target.classList.remove('dragging'); });
+list.addEventListener('dragover', e => {
+  e.preventDefault();
+  const dragging = list.querySelector('.dragging');
+  if (!dragging) return;
+  const after = [...list.querySelectorAll('li:not(.dragging)')].reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = e.clientY - box.top - box.height/2;
+    if (offset < 0 && offset > (closest.offset || -Infinity)) return { offset, element: child };
+    return closest;
+  }, { offset: -Infinity }).element;
+  if (after) list.insertBefore(dragging, after); else list.appendChild(dragging);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+sequenceDiagram
+    actor C as Customer
+    participant LW as Livewire (CheckoutPage)
+    participant BE as Backend (Laravel)
+    participant MT as Midtrans
+    participant Q as Queue
+    participant FA as Filament Admin
+    participant BT as Biteship
+    participant WA as WhatsApp
+
+    Note over C,WA: === Fase Checkout ===
+
+    C->>LW: Checkout (Pickup/Delivery) — cart sudah diisi dari katalog
+    LW->>BE: Livewire checkout()
+    BE->>BE: Validasi stok
+    BE->>BE: Reservasi stok (lockForUpdate)
+    BE->>BE: Generate Order Number (ALBA-YYYYMMDD-XXX)
+    BE->>BE: Hitung total + shipping
+    BE->>MT: Request Snap Token (server-side)
+    MT-->>BE: Snap Token
+    BE-->>LW: Order created (status: pending) + Snap Token
+
+    Note over C,WA: === Fase Pembayaran ===
+
+    LW->>MT: Customer bayar via Snap popup
+    MT-->>MT: Proses pembayaran
+
+    MT->>BE: Webhook: POST /api/webhook/midtrans
+    BE->>BE: Verifikasi IP Whitelist
+    BE->>BE: Verifikasi Signature Key
+    BE-->>MT: HTTP 200 OK
+    BE->>Q: Dispatch ProcessMidtransWebhook
+
+    Q->>Q: Job: GET /v2/{order_id}/status (verifikasi sekunder)
+    Q->>MT: MidtransService::getOrderStatus()
+    MT-->>Q: Status confirmed
+    Q->>BE: Update order.status to Settlement
+    Q->>BE: Insert order_status_logs
+    Q->>BE: Kurangi stock fisik (deduct_reserved)
+
+    Note over C,WA: === Fase Admin Proses (via Filament) ===
+
+    FA->>BE: Admin klik "Proses" (OrderResource action)
+    BE->>BE: TransitionOrderStatus → Processing
+
+    Note over C,WA: === Jalur Pickup ===
+
+    FA->>BE: Admin klik "Siap Diambil"
+    BE->>BE: TransitionOrderStatus → ReadyPickup
+    BE->>Q: Dispatch SendWhatsAppNotification
+    Q->>WA: Job: Kirim WhatsApp "Siap Diambil"
+    WA-->>C: Pesan WhatsApp
+    FA->>BE: Admin klik "Selesai"
+    BE->>BE: TransitionOrderStatus → Completed
+
+    Note over C,WA: === Jalur Delivery (Biteship) ===
+
+    FA->>BE: Admin klik "Kirim" (auto-create Biteship order)
+    BE->>BT: Create order + request pickup
+    BT-->>BE: waybill_id + courier info
+    BE->>BE: Insert shipments + TransitionOrderStatus → Shipping
+
+    BT->>BE: Webhook: POST /api/webhook/biteship
+    BE->>BE: Verifikasi Signature + IP
+    BE-->>BT: HTTP 200 OK
+    BE->>Q: Dispatch ProcessBiteshipWebhook
+
+    Q->>BE: Update shipment.tracking_status
+    Q->>BE: Sync order.status to Delivered (jika delivered)
+    Q->>WA: Job: Kirim WhatsApp "Pesanan Sampai"
+    WA-->>C: Pesan WhatsApp
+
+    Note over C,WA: === Fase Selesai ===
+
+    FA->>BE: Admin klik "Selesai" / auto
+    BE->>BE: TransitionOrderStatus → Completed
+    BE-->>FA: Pesanan selesai

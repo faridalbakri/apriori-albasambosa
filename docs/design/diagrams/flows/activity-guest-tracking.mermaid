@@ -1,0 +1,38 @@
+flowchart TD
+    Start([Customer buka /cek-status])
+
+    Start --> Source{Dari mana?}
+
+    Source -->|WhatsApp link| SignedURL["GET /cek-status/cari?<br>order_number=...&phone=...<br>&signature=..."]
+
+    SignedURL --> VerifySign{Verifikasi signed URL?}
+    VerifySign -->|Invalid / Expired| RejectSign([Tampilkan error:<br>Link tidak valid/kadaluwarsa])
+    VerifySign -->|Valid| AutoLookup[Auto-lookup:<br>order_number + phone]
+
+    Source -->|Manual| ShowForm[Tampilkan form:<br>Order Number + Telepon]
+    ShowForm --> SubmitForm[POST /cek-status]
+    SubmitForm --> RateLimit{Rate limit?<br>5 hit/menit/IP}
+    RateLimit -->|Terlampaui| RateError([HTTP 429 Too Many Requests])
+    RateLimit -->|OK| ManualLookup[Lookup:<br>order_number + phone]
+
+    AutoLookup --> FindOrder{Cari order}
+    ManualLookup --> FindOrder
+
+    FindOrder --> Found{Order ditemukan?}
+    Found -->|Tidak| NotFound([Tampilkan:<br>Pesanan tidak ditemukan])
+    Found -->|Ya| ShowStatus[Tampilkan detail pesanan:<br>status, items, tracking,<br>timeline status log]
+
+    ShowStatus --> ShowActions{Status = Pending?}
+
+    ShowActions -->|Ya| BatalBtn[Tampilkan tombol Batalkan]
+    BatalBtn --> CancelClick[Customer klik Batalkan]
+    CancelClick --> ConfirmBatal[Konfirmasi modal]
+    ConfirmBatal -->|Batal| ShowStatus
+    ConfirmBatal -->|Ya| DoCancel[POST /orders/order/cancel]
+    DoCancel --> CancelTransition[TransitionOrderStatus → Cancel]
+    CancelTransition --> ReleaseStock[release_reserved]
+    ReleaseStock --> RefreshStatus[Refresh halaman]
+
+    ShowActions -->|Bukan Pending| InfoOnly[Tampilkan info:<br>hubungi WA admin untuk perubahan]
+
+

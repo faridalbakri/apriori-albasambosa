@@ -1,0 +1,42 @@
+flowchart TD
+    Start(["Admin buka OrderResource"])
+    Start --> List["Lihat daftar pesanan<br>Filter: status, tanggal"]
+    List --> Select["Pilih pesanan"]
+
+    Select --> Detail["Detail pesanan:<br>items, customer, shipment, status log"]
+    Detail --> Actions{"Actions berdasarkan status"}
+
+    Actions -->|Pending| SyncMidtrans["Sync Midtrans:<br>cek status pembayaran"]
+    SyncMidtrans --> MidtransResult{"Status Midtrans?"}
+    MidtransResult -->|Settlement| AutoSettle["Auto-transisi ke Settlement"]
+    MidtransResult -->|Expire| AutoExpire["Auto-transisi ke Expire"]
+    MidtransResult -->|Pending| WaitPayment["Menunggu bayar"]
+
+    Actions -->|Settlement| Proses["Admin klik Proses"]
+    Proses --> ProcTransition["TransitionOrderStatus to Processing"]
+
+    Actions -->|Processing| PickMethod{"Pickup atau Delivery?"}
+
+    PickMethod -->|Pickup| SiapPickup["Admin klik Siap Diambil"]
+    SiapPickup --> RPTransition["TransitionOrderStatus to ReadyPickup"]
+    RPTransition --> WAPickup["Kirim WhatsApp:<br>Siap Diambil + link tracking"]
+
+    PickMethod -->|Delivery| Kirim["Admin klik Kirim"]
+    Kirim --> CreateBiteship["Buat order Biteship:<br>request pickup"]
+    CreateBiteship --> Waybill["Simpan waybill_id + courier"]
+    Waybill --> ShipTransition["TransitionOrderStatus to Shipping"]
+    ShipTransition --> WAShip["Kirim WhatsApp:<br>Dalam Pengiriman + link Biteship"]
+
+    Actions -->|ReadyPickup| Konfirmasi["Admin klik Selesai"]
+    Konfirmasi --> CompTransition["TransitionOrderStatus to Completed"]
+
+    Actions -->|"Shipping / Delivered"| RefundOpt{"Perlu refund?"}
+    RefundOpt -->|Ya| RefundAction["Admin klik Refund"]
+    RefundAction --> RefundTransition["TransitionOrderStatus to RefundPending"]
+    RefundTransition --> ManualRefund["Admin proses refund<br>manual via Midtrans dashboard"]
+    ManualRefund --> RefundDone["Admin klik Refund Selesai"]
+    RefundDone --> RDTransition["TransitionOrderStatus to RefundDone"]
+
+    Actions -->|Cancel| RefundAction
+
+    Actions -->|"Completed / Expire / RefundDone"| ViewOnly["View only - Status final"]

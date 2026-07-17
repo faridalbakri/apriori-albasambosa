@@ -1,0 +1,61 @@
+name: Test & Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@a42e73e16d831796463b22b8d70a3efcad74e074 # v2.32.0
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_sqlite, bcmath, intl
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: vendor
+          key: composer-8.3-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-8.3-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Lint with Pint
+        run: vendor/bin/pint --test
+
+      - name: Create dummy Vite manifest
+        run: mkdir -p public/build && echo '{}' > public/build/manifest.json
+
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install pandas mlxtend
+
+      - name: Run tests
+        run: |
+          php artisan config:clear
+          php artisan test --compact --profile
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          TWILIO_SID: test_sid
+          TWILIO_AUTH_TOKEN: test_auth_token

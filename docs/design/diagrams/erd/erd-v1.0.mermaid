@@ -1,0 +1,163 @@
+erDiagram
+    users ||--o{ addresses : has
+    users ||--o{ carts : has
+    users ||--o{ orders : places
+    users ||--o{ notification_logs : triggers
+    users ||--o{ anonymization_logs : anonymized
+
+    categories ||--o{ products : contains
+
+    products ||--o{ carts : added_to
+    products ||--o{ order_items : ordered_as
+
+    orders ||--o{ order_items : contains
+    orders ||--o{ order_status_logs : tracks
+    orders ||--|| shipments : shipped_via
+
+    users ||--o{ order_status_logs : changed_by
+    products ||--o{ admin_picks : featured_as
+
+    users {
+        bigint id PK
+        varchar name
+        varchar email "UK"
+        timestamp email_verified_at
+        timestamp last_login_at
+        timestamp anonymized_at
+        boolean anonymization_exempt
+        varchar password
+        varchar role
+        varchar remember_token
+        timestamp created_at
+        timestamp updated_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    addresses {
+        bigint id PK
+        bigint user_id FK
+        varchar label
+        varchar recipient_name
+        varchar phone
+        text address_detail
+        boolean is_default
+        timestamp created_at
+        timestamp updated_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    categories {
+        bigint id PK
+        varchar name
+        varchar slug "UK"
+        int sort_order
+        timestamp created_at
+        timestamp updated_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    products {
+        bigint id PK
+        bigint category_id FK
+        varchar name
+        varchar slug "UK"
+        text description
+        bigint price
+        int stock
+        int stock_reserved
+        varchar image
+        int total_sold
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    carts {
+        bigint id PK
+        bigint user_id FK
+        varchar session_id
+        bigint product_id FK
+        int quantity
+        bigint price
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    orders {
+        bigint id PK
+        bigint user_id FK
+        varchar order_number "UK"
+        bigint total_price
+        varchar status
+        varchar snap_token
+        varchar payment_method
+        bigint shipping_cost
+        timestamp pickup_time
+        varchar phone
+        varchar recipient_name
+        text address_detail
+        varchar postal_code
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    order_items {
+        bigint id PK
+        bigint order_id FK
+        bigint product_id FK
+        int quantity
+        bigint price
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    order_status_logs {
+        bigint id PK
+        bigint order_id FK
+        varchar old_status
+        varchar new_status
+        bigint user_id FK
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    shipments {
+        bigint id PK
+        bigint order_id FK "UK"
+        varchar waybill_id
+        varchar courier
+        varchar courier_service
+        varchar tracking_status
+        timestamp estimated_arrival
+        timestamp created_at
+        timestamp updated_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    apriori_rules {
+        bigint id PK
+        varchar antecedent
+        varchar consequent
+        float support
+        float confidence
+        float lift
+        timestamp created_at
+    }
+
+    notification_logs {
+        bigint id PK
+        bigint user_id FK
+        json metadata
+        varchar status
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    admin_picks {
+        bigint id PK
+        bigint product_id FK
+        int sort_order
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    anonymization_logs {
+        bigint id PK
+        bigint user_id FK
+        varchar action_type
+        json anonymized_fields
+        timestamp created_at "DEFAULT CURRENT_TIMESTAMP"
+    }

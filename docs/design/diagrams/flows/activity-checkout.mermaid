@@ -1,0 +1,42 @@
+flowchart TD
+    Start([Customer buka /checkout])
+    Start --> CartCheck{Keranjang kosong?}
+    CartCheck -->|Ya| RedirectMenu([Redirect ke /menu])
+    CartCheck -->|Tidak| AuthCheck{Login?}
+
+    AuthCheck -->|Registered| LoadAddress[Load buku alamat]
+    LoadAddress --> ShowForm[Tampilkan form checkout]
+    AuthCheck -->|Guest| ShowForm
+
+    ShowForm --> PickMethod{Pilih metode}
+    PickMethod -->|Pickup| PickupForm[Isi nama, telepon, waktu pickup]
+    PickMethod -->|Delivery| DeliveryForm[Isi nama, telepon, alamat lengkap]
+
+    PickupForm --> Consent{PDP Consent?}
+    DeliveryForm --> Courier[Pilih kurir via Biteship]
+
+    Courier --> FetchRates[GET ongkir real-time /nCache 5 menit]
+    FetchRates --> RateOK{Ongkir tersedia?}
+    RateOK -->|Tidak| BlockDelivery([Delivery diblokir<br>Hanya Pickup])
+    RateOK -->|Ya| SelectRate[Pilih kurir + service]
+    SelectRate --> Consent
+
+    Consent -->|Tidak centang| ShowError([Tampilkan error validasi])
+    Consent -->|Ya| Confirm[Konfirmasi modal:<br>Periksa Kembali / Ya]
+
+    Confirm -->|Periksa Kembali| ShowForm
+    Confirm -->|Ya| Submit["Livewire checkout()"]
+
+    Submit --> ValidateStock{Stok cukup?}
+    ValidateStock -->|Tidak| StockError([Tampilkan error stok])
+    ValidateStock -->|Ya| ReserveStock["Reservasi stok<br>DB Transaction + lockForUpdate"]
+    ReserveStock --> CreateOrder["Buat Order<br>ALBA-YYYYMMDD-XXX"]
+    CreateOrder --> SnapToken{"Snap token ada?"}
+    SnapToken -->|"Ya, reuse"| OpenSnap["Kirim token ke frontend"]
+    SnapToken -->|"Belum"| GenerateSnap["Generate Snap token<br>via Midtrans API"]
+    GenerateSnap --> SaveToken["Simpan ke orders.snap_token"]
+    SaveToken --> OpenSnap
+
+    OpenSnap --> SnapPopup["Customer bayar<br>via Snap popup"]
+    SnapPopup --> ClearSession["Clear checkout session"]
+    ClearSession --> RedirectSuccess(["Redirect /checkout/sukses/order"])

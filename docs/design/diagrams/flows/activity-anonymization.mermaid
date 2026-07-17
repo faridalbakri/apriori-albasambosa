@@ -1,0 +1,40 @@
+flowchart TD
+    Start([Trigger])
+
+    Start --> TriggerType{Jenis trigger?}
+    TriggerType -->|Manual| Manual[Admin klik Anonimkan<br>di UserResource]
+    TriggerType -->|Auto| Cronjob[Cronjob bulanan<br>privacy:anonymize-guest<br>privacy:anonymize-registered]
+
+    Manual --> FindUser[Find user by ID]
+    FindUser --> CheckExempt{anonymization_exempt?}
+    CheckExempt -->|Ya| SkipExempt([Skip — dikecualikan])
+    CheckExempt -->|Tidak| ManualSafety{Ada pesanan aktif?}
+
+    Cronjob --> BatchQuery[Query users eligible:<br>Guest > 24 bulan<br>Registered > 36 bulan]
+
+    BatchQuery --> GraceCheck{Dalam grace period?}
+    GraceCheck -->|Ya, < 7 hari| DelayAnon([Tunda — tunggu grace period selesai])
+    GraceCheck -->|Tidak| FilterExempt[Filter: anonymization_exempt = false]
+
+    FilterExempt --> BatchSafety{Punya pesanan aktif?}
+    BatchSafety -->|Ya| SkipActive([Skip — safety lock])
+    BatchSafety -->|Tidak| ProcessBatch[Proses per user]
+
+    ManualSafety -->|Ya| SkipActive
+    ManualSafety -->|Tidak| ProcessAnon[AnonymizeUser action]
+
+    ProcessBatch --> ProcessAnon
+
+    ProcessAnon --> ActionType{User type?}
+    ActionType -->|Guest| AnonGuest[Anonymize:<br>- name → Anonymous<br>- email → anon_xxx@anon<br>- phone → null<br>- recipient_name → null<br>- address_detail → null<br>- delete carts]
+    ActionType -->|Registered| AnonReg[Anonymize:<br>- name → Anonymous<br>- email → anon_xxx@anon<br>- phone → null<br>- recipient_name → null<br>- address_detail → null<br>- delete carts]
+
+    AnonGuest --> TimestampGuest[Set users.anonymized_at = now]
+    AnonReg --> TimestampReg[Set users.anonymized_at = now]
+
+    TimestampGuest --> LogAnon[Insert anonymization_logs:<br>action_type, anonymized_fields, user_id, created_at]
+    TimestampReg --> LogAnon
+
+    LogAnon --> Done([Selesai])
+
+

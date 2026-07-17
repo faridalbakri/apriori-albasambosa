@@ -1,0 +1,82 @@
+stateDiagram-v2
+    [*] --> Pending : Customer checkout
+
+    state Pending {
+        [*] --> MenungguBayar
+        MenungguBayar --> Batalkan : Customer cancel
+        MenungguBayar --> Bayar : Customer bayar
+    }
+
+    Pending --> Settlement : Webhook Midtrans (settlement)
+    Pending --> Expire : > 1 jam (scheduler)
+    Pending --> Cancel : Customer batalkan / Webhook Midtrans
+    Pending --> Failed : Webhook Midtrans (deny/failure)
+
+    Settlement --> Processing : Admin proses
+
+    state Processing {
+        [*] --> ProsesPesanan
+        ProsesPesanan --> PickupPath : Pickup
+        ProsesPesanan --> DeliveryPath : Delivery
+    }
+
+    Processing --> ReadyPickup : Admin konfirmasi (pickup)
+    Processing --> Shipping : Admin kirim via Biteship
+    Processing --> Cancel : Webhook Midtrans cancel
+    Processing --> Failed : Webhook Midtrans deny/failure
+    Processing --> RefundPending : Admin refund
+
+    ReadyPickup --> Completed : Admin konfirmasi diambil
+    ReadyPickup --> Failed : Scheduler / system
+    ReadyPickup --> RefundPending : Admin refund
+
+    Shipping --> Delivered : Webhook Biteship (delivered)
+    Shipping --> Cancel : Scheduler / system
+    Shipping --> Failed : Webhook Biteship (failed)
+    Shipping --> RefundPending : Admin refund
+
+    Delivered --> Completed : Auto / Admin
+    Delivered --> RefundPending : Admin refund
+
+    Cancel --> RefundPending : Admin refund
+    RefundPending --> RefundDone : Admin proses refund
+
+    Expire --> [*]
+    Failed --> [*]
+    Completed --> [*]
+    RefundDone --> [*]
+
+    note right of Pending
+        Stok di-reserve
+        Order number dibuat
+    end note
+
+    note right of Settlement
+        Stok fisik dikurangi
+        deduct_reserved
+    end note
+
+    note right of Expire
+        release_reserved:
+        stok reserve dikembalikan
+    end note
+
+    note right of Processing
+        Dua jalur: Pickup vs Delivery
+        Cancel/Failed: webhook only
+        Admin: gunakan Refund
+    end note
+
+    note right of Shipping
+        waybill_id + courier
+        tracking_status aktif
+    end note
+
+    note right of Completed
+        Final, tidak bisa berubah
+    end note
+
+    note right of RefundPending
+        Auto-cancel internal
+        restore_stock
+    end note

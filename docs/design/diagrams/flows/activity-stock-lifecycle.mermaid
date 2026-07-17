@@ -1,0 +1,50 @@
+flowchart TD
+    Start([Produk dibuat Admin])
+
+    Start --> InitStock[stock = N<br>stock_reserved = 0<br>total_sold = 0]
+
+    InitStock --> Available[Stok tersedia:<br>stock - stock_reserved]
+
+    Available --> OrderCreated{Customer checkout}
+
+    OrderCreated -->|Pesanan Pending| Reserve[Reserve:<br>stock_reserved += quantity]
+    Reserve --> CheckAvailable{"stock - stock_reserved<br>&gt;= 0?"}
+    CheckAvailable -->|Tidak| Oversell(["Blokir - oversell prevented"])
+    CheckAvailable -->|Ya| PendingState[Status: Pending]
+
+    PendingState --> WhatHappens{Apa yang terjadi?}
+
+    WhatHappens -->|Customer bayar<br>Webhook Midtrans settlement| Settlement[Settlement]
+    WhatHappens -->|"&gt; 1 jam<br>Scheduler"| Expiry[Expire]
+    WhatHappens -->|Customer batalkan| Cancel[Cancel]
+    WhatHappens -->|Webhook Midtrans<br>deny/failure| Fail[Failed]
+
+    Settlement --> DeductReserved[Deduct Reserved:<br>stock -= stock_reserved<br>stock_reserved = 0<br>total_sold += quantity]
+
+    DeductReserved --> PostDeduct[Status: Post-Deduction<br>Processing → ReadyPickup/Shipping → Delivered → Completed]
+
+    PostDeduct --> PostWhat{Apa yang terjadi?}
+
+    PostWhat -->|Webhook Midtrans cancel| PostCancel[Cancel<br>Webhook only]
+    PostWhat -->|Webhook Midtrans deny/failure| PostFail[Failed<br>Webhook only]
+    PostWhat -->|Admin Refund| RefundPend[RefundPending]
+
+    PostCancel --> RestoreStock[Restore Stock:<br>stock += quantity<br>stock_reserved = 0<br>total_sold -= quantity]
+    PostFail --> RestoreStock
+    RefundPend --> AutoCancel[Auto-cancel internal]
+    AutoCancel --> RestoreStock
+
+    RestoreStock --> Available
+
+    Expiry --> ReleaseReserved[Release Reserved:<br>stock_reserved -= quantity]
+    Cancel --> ReleaseReserved
+    Fail --> ReleaseReserved
+
+    ReleaseReserved --> Available
+
+    DeductReserved --> Completed{Final?}
+    PostWhat -->|Completed| Completed
+    Completed --> FinalState([Completed — stok tidak berubah])
+
+
+

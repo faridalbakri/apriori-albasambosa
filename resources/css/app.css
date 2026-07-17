@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;700&family=Karla:wght@300;400;500;600;700&family=Playfair+Display+SC:wght@400;700&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Karla', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Playfair Display SC', serif;
+    --font-brand: 'Josefin Sans', sans-serif;
+
+    --color-primary: #92400E;
+    --color-accent: #CA8A04;
+    --color-background: #FEF3C7;
+    --color-foreground: #78350F;
+    --color-muted: #FDE68A;
+    --color-border: #FCD34D;
+    --color-destructive: #991b1b;
+    --color-ring: #92400E;
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-info: #2563eb;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Filament admin panel — brand name font */
+.fi-sidebar-header a {
+    font-family: var(--font-brand);
+}

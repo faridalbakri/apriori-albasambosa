@@ -1,0 +1,42 @@
+flowchart LR
+    subgraph System["Sistem Penjualan Online AlbaSambosa (V1)"]
+        direction TB
+        UC1["Registrasi & Verifikasi Email"]
+        UC2["Login & Lupa Password"]
+        UC3["Lihat Katalog & Cari Produk"]
+        UC4["Kelola Keranjang Belanja"]
+        UC5["Checkout (Pickup/Delivery)"]
+        UC6["Pembayaran via Midtrans"]
+        UC7["Cek Status Pesanan (Guest)"]
+        UC8["Lihat Riwayat Pesanan & Profil"]
+        UC9["Kelola Buku Alamat"]
+        UC10["Kelola Produk & Stok"]
+        UC11["Kelola Pesanan & Pengiriman"]
+        UC12["Jalankan Analisis Apriori"]
+        UC13["Kelola Rekomendasi Bundling"]
+        UC14["Monitoring Log & Anonimisasi"]
+        UC15["Rekonsiliasi Keuangan"]
+        UC16["Proses Webhook Pembayaran"]
+        UC17["Proses Webhook Pengiriman"]
+
+        UC5 -->|include| UC6
+        UC11 -.->|extend| UC16
+        UC11 -.->|extend| UC17
+    end
+
+    Pelanggan(["Pelanggan (Guest & Registered)"])
+    Admin(["Admin (AlbaSambosa)"])
+    Midtrans(["Sistem Midtrans"])
+    Biteship(["Sistem Biteship"])
+
+    Pelanggan --> UC1 & UC2 & UC3 & UC4 & UC5 & UC7 & UC8 & UC9
+    Admin --> UC10 & UC11 & UC12 & UC13 & UC14 & UC15
+    Midtrans --> UC16
+    Biteship --> UC17
+
+    classDef actor fill:#FDE68A,stroke:#92400E,stroke-width:2px,color:#78350F
+    classDef usecase fill:#FEF3C7,stroke:#CA8A04,stroke-width:2px,color:#78350F
+    classDef external fill:#FEF3C7,stroke:#78350F,stroke-width:2px,color:#78350F
+    class Pelanggan,Admin actor
+    class Midtrans,Biteship external
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 usecase

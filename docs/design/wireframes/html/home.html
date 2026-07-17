@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home — AlbaSambosa</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400;500;600;700&family=Playfair+Display+SC:wght@400;700&display=swap');
+  h1,h2,h3{font-family:'Playfair Display SC',serif;font-weight:700;}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Karla, system-ui, -apple-system, sans-serif; background: #FEF2F2; color: #450A0A; line-height: 1.5; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+
+  /* Navbar */
+  .navbar { display: flex; align-items: center; padding: 14px 0; gap: 20px; border-bottom: 1px solid #FECACA; margin-bottom: 28px; }
+  .logo { font-size: 22px; font-weight: 800; color: #DC2626; text-decoration: none; white-space: nowrap; }
+  .search-bar { flex: 1; max-width: 480px; position: relative; }
+  .search-bar input { width: 100%; padding: 10px 16px 10px 40px; border: 1px solid #FECACA; border-radius: 8px; font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 14px; }
+  .search-bar input:focus { outline: none; border-color: #DC2626; }
+  .search-bar::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+  .nav-links { display: flex; gap: 4px; margin-left: auto; }
+  .nav-link { padding: 8px 14px; text-decoration: none; color: #450A0A; font-size: 14px; font-weight: 500; border-radius: 8px; }
+  .nav-link:hover, .nav-link.active { background: #FEF2F2; color: #DC2626; }
+  .cart-btn { position: relative; padding: 8px 14px; text-decoration: none; font-size: 14px; font-weight: 600; color: #450A0A; }
+  .cart-badge { position: absolute; top: 0; right: 0; background: #DC2626; color: #fff; font-size: 11px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+  /* Hero */
+  .hero { background: linear-gradient(135deg, #DC2626, #F87171); border-radius: 16px; padding: 48px; color: #fff; margin-bottom: 32px; }
+  .hero h2 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+  .hero p { font-size: 16px; opacity: 0.9; max-width: 500px; }
+
+  /* Section */
+  .section { margin-bottom: 36px; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-header h3 { font-size: 20px; font-weight: 700; }
+  .section-header a { color: #DC2626; font-size: 14px; font-weight: 600; text-decoration: none; }
+
+  /* Category tabs */
+  .category-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .cat-tab { padding: 8px 18px; border: 1px solid #FECACA; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; color: #450A0A; font-family: Karla, system-ui, -apple-system, sans-serif; }
+  .cat-tab.active { background: #DC2626; color: #fff; border-color: #DC2626; }
+
+  /* Product grid */
+  .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  @media (max-width: 960px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .product-grid { grid-template-columns: 1fr; } }
+  .product-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden; transition: box-shadow 0.2s; }
+  .product-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+  .product-img { width: 100%; height: 200px; background: linear-gradient(135deg, #FECACA, #FEF2F2); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+  .product-body { padding: 16px; }
+  .product-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .product-cat { font-size: 12px; color: #7F1D1D; margin-bottom: 8px; }
+  .product-price { font-size: 18px; font-weight: 700; color: #DC2626; margin-bottom: 12px; }
+  .btn-add { width: 100%; padding: 10px; background: #DC2626; color: #fff; border: none; border-radius: 8px; font-family: Karla, system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-add:hover { background: #991B1B; }
+
+  /* Pagination */
+  .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 24px; }
+  .page-btn { width: 36px; height: 36px; border: 1px solid #FECACA; border-radius: 8px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: Karla, system-ui, -apple-system, sans-serif; }
+  .page-btn.active { background: #DC2626; color: #fff; border-color: #DC2626; }
+
+  /* Recommendation */
+  .rec-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); padding: 24px; }
+  .rec-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .rec-list { display: flex; gap: 16px; overflow-x: auto; }
+  .rec-item { flex: 0 0 180px; text-align: center; }
+  .rec-item .thumb { width: 100%; height: 120px; background: #FEF2F2; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 8px; }
+  .rec-item .name { font-size: 14px; font-weight: 500; }
+  .rec-item .price { font-size: 14px; font-weight: 700; color: #DC2626; }
+
+  /* Footer */
+  .footer { border-top: 1px solid #FECACA; padding: 24px 0; margin-top: 32px; display: flex; gap: 24px; font-size: 13px; color: #7F1D1D; }
+  .footer a { color: #7F1D1D; text-decoration: none; }
+  .footer a:hover { color: #DC2626; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="#" class="logo">AlbaSambosa</a>
+    <div class="search-bar"><input type="text" placeholder="Cari produk..."></div>
+    <div class="nav-links">
+      <a href="#" class="nav-link active">Frozen Food</a>
+      <a href="#" class="nav-link">Sambal</a>
+      <a href="#" class="nav-link">Catering</a>
+    </div>
+    <a href="#" class="cart-btn">[Cart] <span class="cart-badge">3</span></a>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h2>Frozen Food Premium</h2>
+    <p>Hadirkan kelezatan restoran di meja makan Anda. Praktis, higienis, dan penuh rasa.</p>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="category-tabs">
+    <button class="cat-tab active">Semua</button>
+    <button class="cat-tab">Frozen Food</button>
+    <button class="cat-tab">Sambal</button>
+    <button class="cat-tab">Catering</button>
+  </div>
+
+  <!-- Product Grid -->
+  <div class="section">
+    <div class="product-grid">
+      <div class="product-card">
+        <div class="product-img"></div>
+        <div class="product-body">
+          <div class="product-name">Sambal Bawang</div>
+          <div class="product-cat">Sambal</div>
+          <div class="product-price">Rp 35.000</div>
+          <button class="btn-add">+ Tambah</button>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img"></div>
+        <div class="product-body">
+          <div class="product-name">Risol Mayo</div>
+          <div class="product-cat">Frozen Food</div>
+          <div class="product-price">Rp 50.000</div>
+          <button class="btn-add">+ Tambah</button>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img"></div>
+        <div class="product-body">
+          <div class="product-name">Nasi Box Premium</div>
+          <div class="product-cat">Catering</div>
+          <div class="product-price">Rp 75.000</div>
+          <button class="btn-add">+ Tambah</button>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-img">A</div>
+        <div class="product-body">
+          <div class="product-name">Sambal Terasi</div>
+          <div class="product-cat">Sambal</div>
+          <div class="product-price">Rp 30.000</div>
+          <button class="btn-add">+ Tambah</button>
+        </div>
+      </div>
+    </div>
+    <div class="pagination">
+      <button class="page-btn">&larr;</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">&rarr;</button>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="section">
+    <div class="section-header">
+      <h3>Pelanggan Juga Membeli...</h3>
+      <a href="#">Lihat Semua &rarr;</a>
+    </div>
+    <div class="rec-card">
+      <div class="rec-list">
+        <div class="rec-item">
+          <div class="thumb"></div>
+          <div class="name">Sambal A</div>
+          <div class="price">Rp 35.000</div>
+        </div>
+        <div class="rec-item">
+          <div class="thumb"></div>
+          <div class="name">Frozen B</div>
+          <div class="price">Rp 50.000</div>
+        </div>
+        <div class="rec-item">
+          <div class="thumb"></div>
+          <div class="name">Sambal C</div>
+          <div class="price">Rp 28.000</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>&copy; 2026 AlbaSambosa</span>
+    <a href="#">Kebijakan Privasi</a>
+    <a href="#">Syarat & Ketentuan</a>
+    <a href="#">Kontak</a>
+  </div>
+
+</div>
+</body>
+</html>

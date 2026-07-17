@@ -1,0 +1,42 @@
+flowchart TD
+    Start([Webhook Diterima POST /api/webhook/midtrans])
+    Start --> IpCheck{IP Whitelist?}
+    IpCheck -->|Not Whitelisted| Reject403([HTTP 403 Forbidden])
+    IpCheck -->|Whitelisted| Verify{Verifikasi Signature Key?}
+    Verify -->|Invalid| Reject403
+    Verify -->|Valid| Return200([HTTP 200 OK - Segera])
+    Return200 --> Dispatch[Dispatch Job ke Queue]
+
+    Dispatch --> Job[Job: ProcessMidtransWebhook]
+    Job --> Idempotent{Cek order_id<br>status bukan Pending?}
+    Idempotent -->|Sudah diproses| Skip([Skip - Idempotent])
+    Idempotent -->|Belum| GetStatus[GET /v2/order_id/status\Verifikasi Sekunder ke Midtrans API]
+
+    GetStatus --> FraudCheck{Fraud Status?}
+    FraudCheck -->|challenge| TreatFail[Perlakukan sebagai Failed]
+    FraudCheck -->|accept| Map[Map transaction_status]
+
+    Map -->|settlement/capture| Settle[TransitionOrderStatus → Settlement]
+    Map -->|expire| Expired[TransitionOrderStatus → Expire]
+    Map -->|cancel| Canceled[TransitionOrderStatus → Cancel]
+    Map -->|deny/failure| Failed[TransitionOrderStatus → Failed]
+    Map -->|refund/partial_refund| Refund[TransitionOrderStatus → RefundPending]
+    Map -->|pending| Pending[Skip - tetap Pending]
+
+    Settle --> Audit[Insert order_status_logs]
+    Expired --> Audit
+    Canceled --> Audit
+    Failed --> Audit
+    Refund --> Audit
+    TreatFail --> Failed
+
+    Audit --> StockEffect{Stock Effect?}
+    StockEffect -->|settlement| DeductReserved[deduct_reserved:<br>Kurangi stock & stock_reserved<br>Increment total_sold]
+    StockEffect -->|expire/cancel/failed| ReleaseReserved[release_reserved / restore_stock:<br>Kembalikan stok]
+    StockEffect -->|refund| Done
+
+    DeductReserved --> Done([Selesai])
+    ReleaseReserved --> Done
+    Pending --> Done
+
+
