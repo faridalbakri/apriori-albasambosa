@@ -1,0 +1,26 @@
+flowchart TD
+    subgraph Customer["Customer Flow"]
+        A[Lihat Katalog] --> B[Tambah ke Keranjang]
+        B --> C[Checkout]
+        C --> D{Pilih Pengiriman}
+        D -->|Pickup| E[Pilih Slot Waktu]
+        D -->|Delivery| F[Cek Ongkir Biteship]
+        E --> G[Pilih Pembayaran]
+        F --> G
+        G --> H[Midtrans Snap Popup]
+        H --> I{Hasil Bayar}
+        I -->|Sukses| J[Update Status + WhatsApp]
+        I -->|Expire/Batal| K[Kembalikan Stok]
+    end
+
+    subgraph Admin["Admin Flow"]
+        L[Login /admin] --> M[Dashboard]
+        M --> N[Proses Pesanan]
+        N --> O[Settlement → Processing]
+        O --> P{Pickup atau Delivery?}
+        P -->|Pickup| Q[ReadyPickup → Completed]
+        P -->|Delivery| R[Shipping → Delivered → Completed]
+        O --> S[RefundPending → RefundDone]
+        M --> T[Kelola Produk & Kategori]
+        M --> U[Apriori Dashboard → Generate Rules]
+    end
